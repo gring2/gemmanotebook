@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reference System Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .upload-area { border: 2px dashed #ccc; padding: 20px; margin: 10px 0; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Reference Document System Test</h1>
+    
+    <div class="test-section">
+        <h2>1. ReferenceManager Test</h2>
+        <p>Testing core functionality...</p>
+        <div id="reference-manager-test"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. File Upload Test</h2>
+        <div class="upload-area">
+            <input type="file" id="file-input" accept=".txt,.md" />
+            <button onclick="testFileUpload()">Upload Test</button>
+        </div>
+        <div id="upload-test-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Relevance Matching Test</h2>
+        <input type="text" id="keywords-input" placeholder="Enter keywords..." />
+        <button onclick="testRelevance()">Test Relevance</button>
+        <div id="relevance-test-result"></div>
+    </div>
+
+    <script type="module">
+        import { ReferenceManager } from './src/references/ReferenceManager.js';
+        
+        const referenceManager = new ReferenceManager();
+        const testDiv = document.getElementById('reference-manager-test');
+        
+        // Test 1: Basic instantiation
+        try {
+            testDiv.innerHTML += '<div class="success">✓ ReferenceManager instantiated successfully</div>';
+        } catch (error) {
+            testDiv.innerHTML += `<div class="error">✗ Error: ${error.message}</div>`;
+        }
+        
+        // Make functions available globally for onclick handlers
+        window.testFileUpload = async function() {
+            const fileInput = document.getElementById('file-input');
+            const resultDiv = document.getElementById('upload-test-result');
+            
+            if (fileInput.files.length === 0) {
+                resultDiv.innerHTML = '<div class="error">Please select a file</div>';
+                return;
+            }
+            
+            try {
+                const file = fileInput.files[0];
+                const document = await referenceManager.uploadFile(file);
+                resultDiv.innerHTML = `
+                    <div class="success">✓ File uploaded successfully</div>
+                    <div>ID: ${document.id}</div>
+                    <div>Name: ${document.name}</div>
+                    <div>Size: ${document.content.length} characters</div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ Error: ${error.message}</div>`;
+            }
+        };
+        
+        window.testRelevance = function() {
+            const keywordsInput = document.getElementById('keywords-input');
+            const resultDiv = document.getElementById('relevance-test-result');
+            
+            const keywords = keywordsInput.value.split(' ').filter(k => k.trim());
+            if (keywords.length === 0) {
+                resultDiv.innerHTML = '<div class="error">Please enter some keywords</div>';
+                return;
+            }
+            
+            try {
+                const relevantContent = referenceManager.getRelevantContent(keywords, 500);
+                resultDiv.innerHTML = `
+                    <div class="success">✓ Relevance test completed</div>
+                    <div><strong>Keywords:</strong> ${keywords.join(', ')}</div>
+                    <div><strong>Relevant content length:</strong> ${relevantContent.length} characters</div>
+                    <div><strong>Content preview:</strong></div>
+                    <pre style="background: #f5f5f5; padding: 10px; max-height: 200px; overflow-y: auto;">${relevantContent || 'No relevant content found'}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ Error: ${error.message}</div>`;
+            }
+        };
+    </script>
+</body>
+</html>

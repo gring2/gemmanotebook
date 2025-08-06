@@ -1,0 +1,26 @@
+## WYSIWYG Note with Gemma SLM
+
+Key Features:
+1. Notion-like block-based editor
+2. Support auto save
+3. It is saved as file in local
+4. Can be integrated with LLM (default Gemma3 SLM model)
+5. Support copilot feature
+6. AI chat feature
+
+## Copilot Feature List
+
+### Auto Completion
+- Auto completion in document context
+
+### Composer Feature
+Generate document based on user's instruction in chat UI:
+- Show what LLM is doing to generate document
+- Human in loop:
+  - Human can interrupt into loop to guide, order to AI what to do
+  - If human is in loop, AI should accept feedback immediately
+- Feedback to generated document:
+  - Human can feedback from chat UI, and AI can decide what to do to accomplish the feedback
+
+## Technical Requirements
+- Language to use: TypeScript

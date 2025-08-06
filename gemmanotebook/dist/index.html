@@ -1,0 +1,464 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gemma Notebook</title><style>* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #fafafa;
+            color: #333;
+        }
+        
+        .app {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .editor-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            min-height: 80vh;
+        }
+        
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .reference-section, .chat-section {
+            flex: 1;
+        }
+        
+        .reference-section h3, .chat-section h3 {
+            margin-bottom: 12px;
+            font-size: 16px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        
+        .reference-container {
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            padding: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .chat-container {
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #e1e5e9;
+        }
+        
+        .chat-input input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .editor {
+            min-height: 500px;
+            outline: none;
+            padding: 40px 80px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .block {
+            margin: 2px 0;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            min-height: 32px;
+            border-radius: 3px;
+            transition: all 0.15s ease;
+        }
+        
+        .block:hover {
+            background-color: rgba(55, 53, 47, 0.08);
+        }
+        
+        .block-handle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            margin-right: 4px;
+            opacity: 0;
+            cursor: grab;
+            color: rgba(55, 53, 47, 0.45);
+            font-size: 18px;
+            transition: opacity 0.15s ease;
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+        
+        .block-handle:active {
+            cursor: grabbing;
+        }
+        
+        .block:hover .block-handle {
+            opacity: 1;
+        }
+        
+        .block-content {
+            outline: none;
+            width: 100%;
+            min-height: 24px;
+            padding: 3px 2px;
+            border: none;
+            background: transparent;
+            font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+            font-size: 16px;
+            line-height: 1.5;
+            color: rgb(55, 53, 47);
+            flex: 1;
+        }
+        
+        .block-content:focus {
+            background-color: transparent;
+            outline: none;
+        }
+        
+        .block-content:empty::before {
+            content: attr(data-placeholder);
+            color: rgba(55, 53, 47, 0.45);
+            pointer-events: none;
+        }
+        
+        .heading-1 { 
+            font-size: 2em; 
+            font-weight: 700; 
+            line-height: 1.2;
+            margin: 2px 0;
+            color: rgb(55, 53, 47);
+        }
+        .heading-2 { 
+            font-size: 1.875em; 
+            font-weight: 600; 
+            line-height: 1.2;
+            margin: 1px 0;
+            color: rgb(55, 53, 47);
+        }
+        .heading-3 { 
+            font-size: 1.5em; 
+            font-weight: 600; 
+            line-height: 1.3;
+            margin: 1px 0;
+            color: rgb(55, 53, 47);
+        }
+        .heading-4 { 
+            font-size: 1.25em; 
+            font-weight: 600; 
+            line-height: 1.4;
+            margin: 1px 0;
+            color: rgb(55, 53, 47);
+        }
+        .heading-5 { 
+            font-size: 1.125em; 
+            font-weight: 600; 
+            line-height: 1.4;
+            margin: 1px 0;
+            color: rgb(55, 53, 47);
+        }
+        .heading-6 { 
+            font-size: 1em; 
+            font-weight: 600; 
+            line-height: 1.5;
+            margin: 1px 0;
+            color: rgb(55, 53, 47);
+        }
+        
+        .horizontal-rule {
+            border: none;
+            border-top: 1px solid rgba(55, 53, 47, 0.16);
+            margin: 12px 0;
+        }
+        
+        .list-item {
+            display: flex;
+            align-items: flex-start;
+            margin: 1px 0;
+        }
+        
+        .list-marker {
+            margin-right: 8px;
+            margin-top: 2px;
+            min-width: 20px;
+            color: rgba(55, 53, 47, 0.6);
+            font-weight: 500;
+        }
+        
+        .checklist-item input[type="checkbox"] {
+            margin-right: 8px;
+            margin-top: 4px;
+            width: 16px;
+            height: 16px;
+            border: 1px solid rgba(55, 53, 47, 0.3);
+            border-radius: 3px;
+        }
+        
+        .quote {
+            border-left: 3px solid rgba(55, 53, 47, 0.4);
+            padding-left: 14px;
+            margin: 1px 0;
+            color: rgba(55, 53, 47, 0.7);
+        }
+        
+        .code-block {
+            background: rgba(135, 131, 120, 0.15);
+            border: 1px solid rgba(135, 131, 120, 0.3);
+            border-radius: 3px;
+            padding: 16px 16px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 85%;
+            line-height: 1.45;
+            color: rgba(55, 53, 47, 0.9);
+            margin: 4px 0;
+        }
+        
+        .status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .status.error {
+            background: #f44336;
+        }
+        
+        .block-menu {
+            position: absolute;
+            left: -40px;
+            top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+        
+        .block:hover .block-menu {
+            opacity: 1;
+        }
+        
+        .menu-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            color: rgba(55, 53, 47, 0.45);
+            font-size: 14px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            transition: background-color 0.15s ease;
+        }
+        
+        .menu-button:hover {
+            background: rgba(55, 53, 47, 0.08);
+            color: rgba(55, 53, 47, 0.7);
+        }
+        
+        .drag-indicator {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #2196f3;
+            border-radius: 1px;
+            display: none;
+            z-index: 100;
+        }
+        
+        .drag-indicator.top {
+            top: -1px;
+        }
+        
+        .drag-indicator.bottom {
+            bottom: -1px;
+        }
+        
+        .block.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+            z-index: 1000;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .block.drag-over-top .drag-indicator.top {
+            display: block;
+        }
+        
+        .block.drag-over-bottom .drag-indicator.bottom {
+            display: block;
+        }
+        
+        .block-type-indicator {
+            position: absolute;
+            left: -60px;
+            top: 4px;
+            color: rgba(55, 53, 47, 0.45);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            pointer-events: none;
+        }
+        
+        .block:hover .block-type-indicator {
+            opacity: 1;
+        }
+        
+        .ai-help {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2196f3;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 999;
+        }
+        
+        .ai-help:hover {
+            background: #1976d2;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        /* Reference UI Styles */
+        .reference-upload {
+            border: 2px dashed #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            background: #fafafa;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .reference-upload:hover {
+            border-color: #2196f3;
+            background: #f0f8ff;
+        }
+        
+        .reference-upload.drag-over {
+            border-color: #2196f3;
+            background: #e3f2fd;
+        }
+        
+        .reference-list {
+            margin-top: 12px;
+        }
+        
+        .reference-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            margin: 4px 0;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .reference-item:hover {
+            background: #e9ecef;
+        }
+        
+        .reference-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 8px;
+        }
+        
+        .reference-actions {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .reference-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .reference-btn:hover {
+            background: #dee2e6;
+        }
+        
+        .reference-btn.delete {
+            color: #dc3545;
+        }
+        
+        .reference-btn.delete:hover {
+            background: #f8d7da;
+        }
+        
+        .reference-stats {
+            font-size: 11px;
+            color: #6c757d;
+            margin-top: 8px;
+            text-align: center;
+        }</style><script defer="defer" src="bundle.js"></script></head><body><div id="app"></div></body></html>
