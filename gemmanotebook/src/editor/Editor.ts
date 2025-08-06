@@ -123,10 +123,22 @@ export class Editor {
       // Find the drop position
       const dropPosition = this.getDropPosition(e.clientY);
       
-      // Create image blocks for each dropped image
+      // Check if there's an empty image block at or near the drop position that we can reuse
+      let startIndex = dropPosition;
+      const emptyImageBlock = this.findEmptyImageBlockNear(dropPosition);
+      
+      // Create or reuse image blocks for each dropped image
       imageFiles.forEach((file, index) => {
-        const insertIndex = dropPosition + index;
-        const blockId = this.addBlock('image', '', insertIndex);
+        let blockId: string;
+        
+        if (index === 0 && emptyImageBlock) {
+          // Reuse the first empty image block we found
+          blockId = emptyImageBlock.id;
+        } else {
+          // Create new blocks for additional images
+          const insertIndex = emptyImageBlock ? dropPosition + index : startIndex + index;
+          blockId = this.addBlock('image', '', insertIndex);
+        }
         
         // Read the file and update the block
         const reader = new FileReader();
@@ -161,6 +173,24 @@ export class Editor {
     
     // Drop at the end if no suitable position found
     return this.blocks.length;
+  }
+
+  private findEmptyImageBlockNear(dropPosition: number): Block | null {
+    // Check a range around the drop position for empty image blocks
+    const searchRange = 2; // Check 2 blocks before and after
+    const start = Math.max(0, dropPosition - searchRange);
+    const end = Math.min(this.blocks.length, dropPosition + searchRange + 1);
+    
+    for (let i = start; i < end; i++) {
+      const block = this.blocks[i];
+      if (block && 
+          block.type === 'image' && 
+          (!block.metadata?.src || block.metadata.src === '')) {
+        return block;
+      }
+    }
+    
+    return null;
   }
 
   private handleKeyDown(event: KeyboardEvent): void {

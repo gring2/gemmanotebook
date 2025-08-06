@@ -19,6 +19,7 @@ export declare class Editor {
     private setupSuggestionHandlers;
     private setupGlobalImageDragDrop;
     private getDropPosition;
+    private findEmptyImageBlockNear;
     private handleKeyDown;
     private handleInput;
     private handleClick;
