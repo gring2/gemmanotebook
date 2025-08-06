@@ -14,11 +14,14 @@ export interface ReferenceStorage {
 
 export class ReferenceManager {
   private readonly STORAGE_KEY = 'gemma-notebook-references';
+  private readonly TRASH_STORAGE_KEY = 'gemma-notebook-references-trash';
   private documents: ReferenceDocument[] = [];
+  private recentlyDeleted: { document: ReferenceDocument; deletedAt: Date }[] = [];
   private documentIdCounter = 0;
 
   constructor() {
     this.loadReferences();
+    this.loadTrash();
   }
 
   public async uploadFile(file: File): Promise<ReferenceDocument> {
@@ -63,11 +66,42 @@ export class ReferenceManager {
   public removeDocument(documentId: string): boolean {
     const index = this.documents.findIndex(doc => doc.id === documentId);
     if (index !== -1) {
-      this.documents.splice(index, 1);
+      const removedDoc = this.documents.splice(index, 1)[0];
+      
+      // Add to recently deleted for undo functionality
+      this.recentlyDeleted.unshift({ 
+        document: removedDoc, 
+        deletedAt: new Date() 
+      });
+      
+      // Keep only last 10 deleted documents
+      this.recentlyDeleted = this.recentlyDeleted.slice(0, 10);
+      
       this.saveReferences();
+      this.saveTrash();
       return true;
     }
     return false;
+  }
+
+  public undoLastRemoval(): ReferenceDocument | null {
+    const lastDeleted = this.recentlyDeleted.shift();
+    if (lastDeleted) {
+      this.documents.push(lastDeleted.document);
+      this.saveReferences();
+      this.saveTrash();
+      return lastDeleted.document;
+    }
+    return null;
+  }
+
+  public getRecentlyDeleted(): { document: ReferenceDocument; deletedAt: Date }[] {
+    return [...this.recentlyDeleted];
+  }
+
+  public clearTrash(): void {
+    this.recentlyDeleted = [];
+    this.saveTrash();
   }
 
   public getDocument(documentId: string): ReferenceDocument | undefined {
@@ -100,8 +134,20 @@ export class ReferenceManager {
   }
 
   public clearAllDocuments(): void {
+    // Move all documents to trash before clearing
+    this.documents.forEach(doc => {
+      this.recentlyDeleted.unshift({ 
+        document: doc, 
+        deletedAt: new Date() 
+      });
+    });
+    
+    // Keep only last 20 deleted documents when clearing all
+    this.recentlyDeleted = this.recentlyDeleted.slice(0, 20);
+    
     this.documents = [];
     this.saveReferences();
+    this.saveTrash();
   }
 
   public getStats(): {
@@ -193,6 +239,33 @@ export class ReferenceManager {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  }
+
+  private loadTrash(): void {
+    try {
+      const stored = localStorage.getItem(this.TRASH_STORAGE_KEY);
+      if (stored) {
+        const data = JSON.parse(stored);
+        this.recentlyDeleted = data.map((item: any) => ({
+          document: {
+            ...item.document,
+            uploadedAt: new Date(item.document.uploadedAt)
+          },
+          deletedAt: new Date(item.deletedAt)
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load trash:', error);
+      this.recentlyDeleted = [];
+    }
+  }
+
+  private saveTrash(): void {
+    try {
+      localStorage.setItem(this.TRASH_STORAGE_KEY, JSON.stringify(this.recentlyDeleted));
+    } catch (error) {
+      console.error('Failed to save trash:', error);
+    }
   }
 
   // Search within reference documents

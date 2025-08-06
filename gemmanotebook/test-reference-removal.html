@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Reference Removal</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Reference Removal Test</h1>
+        <div class="test-info">
+            <h3>Test Instructions:</h3>
+            <ol>
+                <li>Click "📚 References" to expand the section</li>
+                <li>Upload a .txt or .md file to add a reference</li>
+                <li>Look for the red "×" button next to each reference</li>
+                <li>Click the "×" button to remove a reference</li>
+                <li>Confirm the removal in the popup dialog</li>
+            </ol>
+        </div>
+        
+        <div id="references-container"></div>
+    </div>
+
+    <script type="module">
+        import { ReferenceManager } from './src/references/ReferenceManager.js';
+        import { ReferenceUI } from './src/references/ReferenceUI.js';
+
+        // Initialize the reference system
+        const referenceManager = new ReferenceManager();
+        const container = document.getElementById('references-container');
+        const referenceUI = new ReferenceUI(container, referenceManager);
+
+        // Add some test data for demonstration
+        const createTestFile = (name, content) => {
+            const blob = new Blob([content], { type: 'text/plain' });
+            return new File([blob], name, { type: 'text/plain' });
+        };
+
+        // Auto-expand the section for testing
+        setTimeout(() => {
+            referenceUI.expandSection();
+        }, 500);
+
+        console.log('Reference removal test page loaded');
+        console.log('ReferenceManager methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(referenceManager)));
+    </script>
+</body>
+</html>
