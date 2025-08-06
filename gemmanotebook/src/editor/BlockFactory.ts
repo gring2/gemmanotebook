@@ -33,7 +33,8 @@ export class BlockFactory {
       'bullet-list': { level: 0 },
       'numbered-list': { level: 0, number: 1 },
       'checklist': { checked: false, level: 0 },
-      'horizontal-rule': {}
+      'horizontal-rule': {},
+      'image': { src: '', alt: '', width: 600, caption: '' }
     };
 
     return { ...defaults[type], ...metadata };

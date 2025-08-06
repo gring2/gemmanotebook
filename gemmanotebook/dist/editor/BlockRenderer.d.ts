@@ -11,6 +11,9 @@ export declare class BlockRenderer {
     private createNumberedListElement;
     private createChecklistElement;
     private createHorizontalRuleElement;
+    private createImageElement;
     private getBlockTypeLabel;
+    private setupImageUpload;
+    private setupImageResize;
     static applyTextFormatting(element: HTMLElement, content: string): void;
 }

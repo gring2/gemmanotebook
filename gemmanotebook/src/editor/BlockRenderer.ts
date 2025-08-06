@@ -85,6 +85,9 @@ export class BlockRenderer {
       case 'horizontal-rule':
         return this.createHorizontalRuleElement(block);
       
+      case 'image':
+        return this.createImageElement(block);
+      
       default:
         return this.createParagraphElement(block);
     }
@@ -236,6 +239,73 @@ export class BlockRenderer {
     return hr;
   }
 
+  private createImageElement(block: Block): HTMLElement {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'image-block';
+
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'image-container';
+
+    if (block.metadata?.src) {
+      // Display existing image
+      const img = document.createElement('img');
+      img.src = block.metadata.src;
+      img.alt = block.metadata.alt || '';
+      img.className = 'block-image';
+      img.draggable = false;
+      
+      if (block.metadata.width) {
+        img.style.width = `${block.metadata.width}px`;
+      }
+      
+      imageContainer.appendChild(img);
+
+      // Add resize handles
+      const resizeHandle = document.createElement('div');
+      resizeHandle.className = 'image-resize-handle';
+      resizeHandle.innerHTML = '↘';
+      imageContainer.appendChild(resizeHandle);
+
+      // Add caption
+      const caption = document.createElement('div');
+      caption.className = 'image-caption block-content';
+      caption.contentEditable = 'true';
+      caption.textContent = block.metadata.caption || '';
+      caption.setAttribute('data-placeholder', 'Add a caption...');
+      wrapper.appendChild(imageContainer);
+      wrapper.appendChild(caption);
+
+      // Setup resize functionality
+      this.setupImageResize(img, resizeHandle, block);
+    } else {
+      // Show upload area
+      const uploadArea = document.createElement('div');
+      uploadArea.className = 'image-upload-area';
+      uploadArea.innerHTML = `
+        <div class="upload-placeholder">
+          <div class="upload-icon">📁</div>
+          <div class="upload-text">Click to upload or drag an image here</div>
+          <div class="upload-formats">Supports JPG, PNG, GIF, WebP</div>
+        </div>
+      `;
+
+      // Add file input
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.style.display = 'none';
+      
+      uploadArea.appendChild(fileInput);
+      imageContainer.appendChild(uploadArea);
+      wrapper.appendChild(imageContainer);
+
+      // Setup upload functionality
+      this.setupImageUpload(uploadArea, fileInput, block);
+    }
+
+    return wrapper;
+  }
+
   private getBlockTypeLabel(type: BlockType): string {
     switch (type) {
       case 'paragraph': return '';
@@ -251,8 +321,110 @@ export class BlockRenderer {
       case 'numbered-list': return 'NUM';
       case 'checklist': return 'TODO';
       case 'horizontal-rule': return 'HR';
+      case 'image': return 'IMG';
       default: return '';
     }
+  }
+
+  private setupImageUpload(uploadArea: HTMLElement, fileInput: HTMLInputElement, block: Block): void {
+    const handleFile = (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        
+        // Update block metadata with image data
+        block.metadata = {
+          ...block.metadata,
+          src: result,
+          alt: file.name,
+          width: 600, // Default width
+          file: file
+        };
+
+        // Trigger a re-render by dispatching an event
+        const event = new CustomEvent('imageUploaded', {
+          detail: { blockId: block.id, imageData: result }
+        });
+        window.dispatchEvent(event);
+      };
+      
+      reader.readAsDataURL(file);
+    };
+
+    // Click to upload
+    uploadArea.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleFile(file);
+      }
+    });
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('drag-over');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('drag-over');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('drag-over');
+      
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+  }
+
+  private setupImageResize(img: HTMLImageElement, resizeHandle: HTMLElement, block: Block): void {
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    resizeHandle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      isResizing = true;
+      startX = e.clientX;
+      startWidth = img.offsetWidth;
+      
+      document.body.style.cursor = 'nw-resize';
+      document.body.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+
+      const deltaX = e.clientX - startX;
+      const newWidth = Math.max(100, Math.min(800, startWidth + deltaX));
+      
+      img.style.width = `${newWidth}px`;
+      
+      // Update block metadata
+      if (block.metadata) {
+        block.metadata.width = newWidth;
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isResizing) {
+        isResizing = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    });
   }
 
   static applyTextFormatting(element: HTMLElement, content: string): void {

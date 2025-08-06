@@ -11,7 +11,8 @@ export type BlockType =
   | 'bullet-list'
   | 'numbered-list'
   | 'checklist'
-  | 'horizontal-rule';
+  | 'horizontal-rule'
+  | 'image';
 
 export interface Block {
   id: string;
@@ -52,4 +53,13 @@ export interface ListItemMetadata {
   level: number;
   checked?: boolean;
   number?: number;
+}
+
+export interface ImageMetadata {
+  src: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+  caption?: string;
+  file?: File;
 }

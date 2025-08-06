@@ -1,4 +1,4 @@
-export type BlockType = 'paragraph' | 'heading-1' | 'heading-2' | 'heading-3' | 'heading-4' | 'heading-5' | 'heading-6' | 'quote' | 'code' | 'bullet-list' | 'numbered-list' | 'checklist' | 'horizontal-rule';
+export type BlockType = 'paragraph' | 'heading-1' | 'heading-2' | 'heading-3' | 'heading-4' | 'heading-5' | 'heading-6' | 'quote' | 'code' | 'bullet-list' | 'numbered-list' | 'checklist' | 'horizontal-rule' | 'image';
 export interface Block {
     id: string;
     type: BlockType;
@@ -32,4 +32,12 @@ export interface ListItemMetadata {
     level: number;
     checked?: boolean;
     number?: number;
+}
+export interface ImageMetadata {
+    src: string;
+    alt?: string;
+    width?: number;
+    height?: number;
+    caption?: string;
+    file?: File;
 }

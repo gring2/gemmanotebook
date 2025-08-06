@@ -17,6 +17,8 @@ export declare class Editor {
     private initializeEditor;
     private setupEventListeners;
     private setupSuggestionHandlers;
+    private setupGlobalImageDragDrop;
+    private getDropPosition;
     private handleKeyDown;
     private handleInput;
     private handleClick;

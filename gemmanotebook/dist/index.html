@@ -352,6 +352,128 @@
             opacity: 1;
         }
         
+        /* Image Block Styles */
+        .image-block {
+            margin: 8px 0;
+        }
+        
+        .image-container {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+        }
+        
+        .block-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 3px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.15s ease;
+        }
+        
+        .block-image:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .image-resize-handle {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border: 2px solid #2196f3;
+            border-radius: 50%;
+            cursor: nw-resize;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #2196f3;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .image-container:hover .image-resize-handle {
+            display: flex;
+        }
+        
+        .image-caption {
+            margin-top: 8px;
+            text-align: center;
+            color: rgba(55, 53, 47, 0.6);
+            font-size: 14px;
+            font-style: italic;
+        }
+        
+        .image-upload-area {
+            border: 2px dashed rgba(55, 53, 47, 0.3);
+            border-radius: 6px;
+            padding: 40px 20px;
+            text-align: center;
+            background: rgba(55, 53, 47, 0.03);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-upload-area:hover {
+            border-color: rgba(55, 53, 47, 0.5);
+            background: rgba(55, 53, 47, 0.06);
+        }
+        
+        .image-upload-area.drag-over {
+            border-color: #2196f3;
+            background: rgba(33, 150, 243, 0.1);
+            border-style: solid;
+        }
+        
+        .upload-placeholder {
+            pointer-events: none;
+        }
+        
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.7;
+        }
+        
+        .upload-text {
+            font-size: 16px;
+            color: rgba(55, 53, 47, 0.7);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        
+        .upload-formats {
+            font-size: 12px;
+            color: rgba(55, 53, 47, 0.5);
+        }
+        
+        /* Global drag over state */
+        .editor.drag-over {
+            background: rgba(33, 150, 243, 0.05);
+        }
+        
+        .editor.drag-over::before {
+            content: '📷 Drop images anywhere to upload';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(33, 150, 243, 0.9);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: 500;
+            z-index: 1000;
+            pointer-events: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
         .ai-help {
             position: fixed;
             bottom: 20px;

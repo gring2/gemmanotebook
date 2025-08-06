@@ -52,6 +52,9 @@ export class Editor {
     this.editorElement.addEventListener('keydown', this.handleKeyDown.bind(this));
     this.editorElement.addEventListener('input', this.handleInput.bind(this));
     this.editorElement.addEventListener('click', this.handleClick.bind(this));
+    
+    // Global drag and drop for images
+    this.setupGlobalImageDragDrop();
   }
 
   private setupSuggestionHandlers(): void {
@@ -66,6 +69,98 @@ export class Editor {
         this.focusBlock(blockId, 'end');
       }, 10);
     });
+
+    // Listen for image uploads
+    window.addEventListener('imageUploaded', (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { blockId } = customEvent.detail;
+      
+      // Re-render the block to show the uploaded image
+      const block = this.getBlockById(blockId);
+      if (block) {
+        this.updateBlockElement(block);
+      }
+    });
+  }
+
+  private setupGlobalImageDragDrop(): void {
+    // Prevent default drag behaviors on the entire editor
+    this.editorElement.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Check if dragging files
+      if (e.dataTransfer?.types.includes('Files')) {
+        this.editorElement.classList.add('drag-over');
+      }
+    });
+
+    this.editorElement.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Only remove if leaving the editor entirely
+      if (!this.editorElement.contains(e.relatedTarget as Node)) {
+        this.editorElement.classList.remove('drag-over');
+      }
+    });
+
+    this.editorElement.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.editorElement.classList.remove('drag-over');
+
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) return;
+
+      // Filter for image files
+      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+      if (imageFiles.length === 0) {
+        alert('Please drop image files only.');
+        return;
+      }
+
+      // Find the drop position
+      const dropPosition = this.getDropPosition(e.clientY);
+      
+      // Create image blocks for each dropped image
+      imageFiles.forEach((file, index) => {
+        const insertIndex = dropPosition + index;
+        const blockId = this.addBlock('image', '', insertIndex);
+        
+        // Read the file and update the block
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const result = event.target?.result as string;
+          this.updateBlock(blockId, {
+            metadata: {
+              src: result,
+              alt: file.name,
+              width: 600,
+              file: file
+            }
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+  }
+
+  private getDropPosition(clientY: number): number {
+    const blocks = Array.from(this.editorElement.querySelectorAll('.block'));
+    
+    for (let i = 0; i < blocks.length; i++) {
+      const blockElement = blocks[i] as HTMLElement;
+      const rect = blockElement.getBoundingClientRect();
+      const blockCenterY = rect.top + (rect.height / 2);
+      
+      if (clientY <= blockCenterY) {
+        return i;
+      }
+    }
+    
+    // Drop at the end if no suitable position found
+    return this.blocks.length;
   }
 
   private handleKeyDown(event: KeyboardEvent): void {
@@ -332,6 +427,16 @@ export class Editor {
       
       this.updateBlockElement(block);
       this.focusBlock(block.id, 'end');
+      return;
+    }
+
+    // Check for image shortcut
+    if (content === '/image' || content === '/img') {
+      block.type = 'image';
+      block.content = '';
+      block.metadata = {};
+      
+      this.updateBlockElement(block);
       return;
     }
   }
