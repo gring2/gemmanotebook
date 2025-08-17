@@ -109,6 +109,12 @@
             min-height: 32px;
             border-radius: 3px;
             transition: all 0.15s ease;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+        
+        .block .block-content {
+            cursor: text;
         }
         
         .block:hover {
@@ -305,6 +311,22 @@
         .menu-button:hover {
             background: rgba(55, 53, 47, 0.08);
             color: rgba(55, 53, 47, 0.7);
+        }
+        
+        .delete-button:hover {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+        }
+        
+        .block-selected {
+            background-color: rgba(33, 150, 243, 0.1);
+            border-radius: 6px;
+            outline: 2px solid rgba(33, 150, 243, 0.3);
+            outline-offset: -1px;
+        }
+        
+        .block-selected .block-content {
+            background: transparent;
         }
         
         .drag-indicator {

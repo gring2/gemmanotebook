@@ -51,6 +51,13 @@ export class BlockRenderer {
     addButton.title = 'Add block below';
     menu.appendChild(addButton);
 
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'menu-button delete-button';
+    deleteButton.innerHTML = '🗑';
+    deleteButton.title = 'Delete block';
+    deleteButton.dataset.blockId = block.id;
+    menu.appendChild(deleteButton);
+
     return menu;
   }
 

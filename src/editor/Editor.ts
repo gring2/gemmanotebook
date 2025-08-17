@@ -11,6 +11,7 @@ export class Editor {
   private editorElement!: HTMLElement;
   private blocks: Block[] = [];
   private currentBlockId: string | null = null;
+  private selectedBlockId: string | null = null;
   private blockIdCounter = 0;
   private gemmaService: GemmaService;
   private blockFactory: BlockFactory;
@@ -52,6 +53,9 @@ export class Editor {
     this.editorElement.addEventListener('keydown', this.handleKeyDown.bind(this));
     this.editorElement.addEventListener('input', this.handleInput.bind(this));
     this.editorElement.addEventListener('click', this.handleClick.bind(this));
+    
+    // Global keydown listener for selected block deletion
+    document.addEventListener('keydown', this.handleGlobalKeyDown.bind(this));
     
     // Global drag and drop for images
     this.setupGlobalImageDragDrop();
@@ -208,7 +212,13 @@ export class Editor {
         this.handleEnterKey(blockId, event.shiftKey);
         break;
       case 'Backspace':
-        this.handleBackspaceKey(blockId, target);
+        // Delete the entire block if it's selected (Mac behavior)
+        if (this.selectedBlockId === blockId) {
+          event.preventDefault();
+          this.deleteBlock(blockId);
+        } else {
+          this.handleBackspaceKey(blockId, target);
+        }
         break;
       case 'ArrowUp':
         this.handleArrowKey(blockId, 'up');
@@ -239,6 +249,32 @@ export class Editor {
           this.inlineSuggestion.clearSuggestion();
         }
         break;
+      case 'Delete':
+        // Delete the entire block when Delete key is pressed on selected block
+        if (this.selectedBlockId === blockId) {
+          event.preventDefault();
+          this.deleteBlock(blockId);
+        }
+        break;
+    }
+  }
+
+  private handleGlobalKeyDown(event: KeyboardEvent): void {
+    // Only handle keys when a block is selected
+    if (!this.selectedBlockId) return;
+    
+    // Prevent text input when block is selected - this maintains selection state
+    if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
+      // User is typing - clear selection and let them start editing
+      this.clearBlockSelection();
+      return;
+    }
+    
+    // Handle block deletion on Mac (Backspace) and PC (Delete)
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.deleteBlock(this.selectedBlockId);
     }
   }
 
@@ -251,6 +287,9 @@ export class Editor {
     
     const blockId = blockElement.dataset.blockId;
     if (!blockId) return;
+
+    // Clear block selection when user starts editing content
+    this.clearBlockSelection();
 
     const block = this.getBlockById(blockId);
     if (!block) return;
@@ -285,14 +324,30 @@ export class Editor {
     const target = event.target as HTMLElement;
     const blockElement = target.closest('.block') as HTMLElement;
     
+    // Handle delete button clicks
+    if (target.classList.contains('delete-button')) {
+      event.preventDefault();
+      event.stopPropagation();
+      const blockId = target.dataset.blockId;
+      if (blockId) {
+        this.deleteBlock(blockId);
+      }
+      return;
+    }
+    
     // Clear suggestions when clicking (user is repositioning cursor)
     this.inlineSuggestion.clearSuggestion();
     
     if (blockElement) {
       const blockId = blockElement.dataset.blockId;
       if (blockId) {
+        // Select the block on any click within the block
+        this.selectBlock(blockId);
         this.setCurrentBlock(blockId);
       }
+    } else {
+      // Click outside any block - clear selection
+      this.clearBlockSelection();
     }
   }
 
@@ -502,6 +557,39 @@ export class Editor {
     }
   }
 
+  public deleteBlock(blockId: string): void {
+    const index = this.blocks.findIndex(b => b.id === blockId);
+    if (index === -1) return;
+
+    // Clear selection if this block was selected
+    if (this.selectedBlockId === blockId) {
+      this.selectedBlockId = null;
+    }
+
+    // Remove the block
+    this.blocks.splice(index, 1);
+    
+    const blockElement = this.editorElement.querySelector(`[data-block-id="${blockId}"]`);
+    if (blockElement) {
+      blockElement.remove();
+    }
+
+    // Focus management after deletion
+    if (this.blocks.length === 0) {
+      // If no blocks left, add a new paragraph and focus it
+      const newBlockId = this.addBlock('paragraph');
+      this.focusBlock(newBlockId);
+    } else if (index < this.blocks.length) {
+      // Focus the block that took the deleted block's position
+      this.focusBlock(this.blocks[index].id);
+    } else {
+      // Focus the last block if we deleted the last block
+      this.focusBlock(this.blocks[this.blocks.length - 1].id);
+    }
+
+    this.notifyChange();
+  }
+
   public updateBlock(blockId: string, updates: Partial<Block>): void {
     const block = this.getBlockById(blockId);
     if (block) {
@@ -551,6 +639,30 @@ export class Editor {
 
   private setCurrentBlock(blockId: string): void {
     this.currentBlockId = blockId;
+  }
+
+  private selectBlock(blockId: string): void {
+    // Clear any existing selection
+    this.clearBlockSelection();
+    
+    // Set new selection
+    this.selectedBlockId = blockId;
+    
+    // Add visual selection state
+    const blockElement = this.editorElement.querySelector(`[data-block-id="${blockId}"]`) as HTMLElement;
+    if (blockElement) {
+      blockElement.classList.add('block-selected');
+    }
+  }
+
+  private clearBlockSelection(): void {
+    if (this.selectedBlockId) {
+      const blockElement = this.editorElement.querySelector(`[data-block-id="${this.selectedBlockId}"]`) as HTMLElement;
+      if (blockElement) {
+        blockElement.classList.remove('block-selected');
+      }
+      this.selectedBlockId = null;
+    }
   }
 
   private focusBlock(blockId: string, position: 'start' | 'end' = 'start'): void {
