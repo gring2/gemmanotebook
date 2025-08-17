@@ -637,6 +637,93 @@ export class Editor {
     this.rerenderEditor();
   }
 
+  private parseSemanticParagraphs(text: string): { completeParagraphs: string[], incompleteParagraph: string } {
+    // Split by double line breaks (clear paragraph boundaries)
+    const doubleLinesplit = text.split(/\n\s*\n/);
+    
+    if (doubleLinesplit.length > 1) {
+      // We have clear paragraph breaks
+      const completeParagraphs = doubleLinesplit.slice(0, -1);
+      const incompleteParagraph = doubleLinesplit[doubleLinesplit.length - 1];
+      return { completeParagraphs, incompleteParagraph };
+    }
+
+    // No double line breaks - try semantic sentence boundaries
+    const sentences = this.splitIntoSemanticallyMeaningfulSentences(text);
+    
+    if (sentences.completeSentences.length >= 3) {
+      // Group sentences into paragraphs (3-5 sentences per paragraph for readability)
+      const completeParagraphs: string[] = [];
+      const sentenceGroups = this.groupSentencesIntoParagraphs(sentences.completeSentences);
+      
+      if (sentenceGroups.length > 0) {
+        completeParagraphs.push(...sentenceGroups);
+        return { 
+          completeParagraphs, 
+          incompleteParagraph: sentences.incompleteSentence 
+        };
+      }
+    }
+
+    // Not enough content for paragraph split yet
+    return { completeParagraphs: [], incompleteParagraph: text };
+  }
+
+  private splitIntoSemanticallyMeaningfulSentences(text: string): { completeSentences: string[], incompleteSentence: string } {
+    // Enhanced sentence splitting that considers context
+    const sentenceEnders = /[.!?]+(?:\s|$)/g;
+    const matches = [...text.matchAll(sentenceEnders)];
+    
+    if (matches.length === 0) {
+      return { completeSentences: [], incompleteSentence: text };
+    }
+
+    const completeSentences: string[] = [];
+    let lastIndex = 0;
+
+    for (const match of matches) {
+      if (match.index !== undefined) {
+        const sentence = text.substring(lastIndex, match.index + match[0].length).trim();
+        
+        // Filter out very short sentences or abbreviations
+        if (sentence.length > 10 && !this.isLikelyAbbreviation(sentence)) {
+          completeSentences.push(sentence);
+          lastIndex = match.index + match[0].length;
+        }
+      }
+    }
+
+    const incompleteSentence = text.substring(lastIndex).trim();
+    return { completeSentences, incompleteSentence };
+  }
+
+  private groupSentencesIntoParagraphs(sentences: string[]): string[] {
+    const paragraphs: string[] = [];
+    const IDEAL_PARAGRAPH_LENGTH = 3; // 3-4 sentences per paragraph
+    
+    for (let i = 0; i < sentences.length; i += IDEAL_PARAGRAPH_LENGTH) {
+      const paragraphSentences = sentences.slice(i, i + IDEAL_PARAGRAPH_LENGTH);
+      const paragraph = paragraphSentences.join(' ').trim();
+      
+      if (paragraph) {
+        paragraphs.push(paragraph);
+      }
+    }
+
+    return paragraphs;
+  }
+
+  private isLikelyAbbreviation(sentence: string): boolean {
+    // Common abbreviations that shouldn't end sentences
+    const abbreviations = [
+      /\b(Dr|Mr|Mrs|Ms|Prof|Inc|Ltd|Corp|etc|vs|eg|ie|cf|ca|approx)\.$/i,
+      /^\w{1,3}\.$/,  // Short abbreviations like "U.S." or "e.g."
+      /\d+\.\s*$/ // Numbers with periods
+    ];
+    
+    return abbreviations.some(abbrev => abbrev.test(sentence.trim()));
+  }
+
   public getBlocks(): Block[] {
     return [...this.blocks];
   }
@@ -771,31 +858,72 @@ export class Editor {
         insertIndex = currentIndex + 1;
       }
 
-      // Create a block for streaming content
-      const streamingBlockId = this.addBlock('paragraph', '', insertIndex);
+      // Create semantic content blocks
       let accumulatedContent = '';
+      let currentParagraph = '';
+      let createdBlocks: string[] = [];
+      let currentBlockIndex = insertIndex;
 
       await this.gemmaService.streamComposeDocument(
         instruction,
         (chunk: string) => {
           accumulatedContent += chunk;
-          this.updateBlock(streamingBlockId, { content: accumulatedContent });
+          currentParagraph += chunk;
+
+          // Parse for complete paragraphs (double line breaks or sentence endings)
+          const paragraphs = this.parseSemanticParagraphs(currentParagraph);
           
-          // Auto-scroll to the streaming block
-          const blockElement = this.editorElement.querySelector(`[data-block-id="${streamingBlockId}"]`);
-          if (blockElement && typeof blockElement.scrollIntoView === 'function') {
-            blockElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          if (paragraphs.completeParagraphs.length > 0) {
+            // Process complete paragraphs
+            paragraphs.completeParagraphs.forEach((paragraph) => {
+              if (paragraph.trim()) {
+                const blockId = this.addBlock('paragraph', paragraph.trim(), currentBlockIndex);
+                createdBlocks.push(blockId);
+                currentBlockIndex++;
+              }
+            });
+            
+            // Keep only the incomplete paragraph for next iteration
+            currentParagraph = paragraphs.incompleteParagraph;
+          }
+
+          // Update or create the current streaming block
+          if (createdBlocks.length === 0 && currentParagraph.trim()) {
+            // Create first block if none exist yet
+            const blockId = this.addBlock('paragraph', currentParagraph.trim(), currentBlockIndex);
+            createdBlocks.push(blockId);
+            currentBlockIndex++;
+          } else if (createdBlocks.length > 0) {
+            // Update the last created block with current paragraph content
+            const lastBlockId = createdBlocks[createdBlocks.length - 1];
+            this.updateBlock(lastBlockId, { content: currentParagraph.trim() });
+          }
+
+          // Auto-scroll to the latest block
+          if (createdBlocks.length > 0) {
+            const lastBlockId = createdBlocks[createdBlocks.length - 1];
+            const blockElement = this.editorElement.querySelector(`[data-block-id="${lastBlockId}"]`);
+            if (blockElement && typeof blockElement.scrollIntoView === 'function') {
+              blockElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
           }
         },
         context,
         referenceContext
       );
 
-      // After streaming is complete, parse content into proper blocks
-      if (accumulatedContent.trim()) {
-        this.removeBlock(streamingBlockId);
-        this.insertGeneratedContentAsBlocks(accumulatedContent, insertIndex);
-        this.showAutoCompletionNotification('AI content streamed successfully!');
+      // Handle any remaining content
+      if (currentParagraph.trim()) {
+        if (createdBlocks.length > 0) {
+          const lastBlockId = createdBlocks[createdBlocks.length - 1];
+          this.updateBlock(lastBlockId, { content: currentParagraph.trim() });
+        } else {
+          this.addBlock('paragraph', currentParagraph.trim(), currentBlockIndex);
+        }
+      }
+
+      if (createdBlocks.length > 0) {
+        this.showAutoCompletionNotification('AI content generated with semantic structure!');
       }
     } catch (error) {
       console.error('Streaming AI content failed:', error);

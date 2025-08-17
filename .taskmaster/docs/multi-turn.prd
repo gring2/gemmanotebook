@@ -1,0 +1,5 @@
+problem:
+if I ask model to 참고자료를 활용해서 리포트의 초안을 만들어줘.
+modek responses 알겠습니다. 리포트 초안을 작성해 드리겠습니다. 주제를 알려주시면 더 구체적인 초안을 만들 수 있지만, 일단 일반적인 구조로 작성해 보겠습니다.**리포트 초안: [리포트 제목]****1. 서론 (서론)*** 연구 배경 및 필요성: 왜 이 주제를 연구하게 되었는지, 이 연구가 어떤 의미를 가지는지 설명합니다.* 연구 목적: 이 연구를 통해 무엇을 밝히고 싶은지 명확하게 제시합니다.* 연구 질문/가설: 연구를 통해 답을 찾고자 하는 질문이나 검증하고자 하는 가설을 제시합니다.* 연구 범위 및 방법: 연구의 범위와 사용된 연구 방법 (예: 문헌 조사, 설문 조사, 실험 등)을 간략하게 설명합니다.* 용어 정의: 리포트에서 사용되는 주요 용어를 정의하여 독자의 이해를 돕습니다.<br><br>**2. 이론적 배경 (이론적 배경)*** 관련 선행 연구 검토: 이 주제와... 
+although i added reference. from the codebase i think it is because of too large context for gemma model. I think it have to be multi turn agentic workflow.
+please genrate ai agent stucture fot it.

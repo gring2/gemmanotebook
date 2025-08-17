@@ -186,23 +186,41 @@ Continue the current text naturally. Provide ONLY the continuation text (no quot
   }
 
   async generateFromChat(message: string, context: string = '', referenceContext: string = ''): Promise<string> {
+    const isKorean = this.containsKorean(message);
+    
     const fullContext = context && referenceContext 
-      ? `Document context: ${context}\n\nReference materials: ${referenceContext}`
+      ? isKorean 
+        ? `문서 맥락: ${context}\n\n참고 자료: ${referenceContext}`
+        : `Document context: ${context}\n\nReference materials: ${referenceContext}`
       : context
-      ? `Document context: ${context}`
+      ? isKorean ? `문서 맥락: ${context}` : `Document context: ${context}`
       : referenceContext
-      ? `Reference materials: ${referenceContext}`
+      ? isKorean ? `참고 자료: ${referenceContext}` : `Reference materials: ${referenceContext}`
       : '';
 
-    const prompt = fullContext
-      ? `${fullContext}
+    let prompt = '';
+    
+    if (isKorean) {
+      prompt = fullContext
+        ? `Reference materials: ${referenceContext}
+
+User question: ${message}
+
+Answer in Korean language using the reference materials provided above:`
+        : `User question: ${message}
+
+Answer in Korean language:`;
+    } else {
+      prompt = fullContext
+        ? `${fullContext}
 
 User message: ${message}
 
-Provide a helpful response using the available context and reference materials:`
-      : `User message: ${message}
+Provide a helpful, well-structured response. If the response requires multiple points, organize them into clear paragraphs. Use natural language that flows well and connects ideas smoothly. Reference the available context and materials when relevant:`
+        : `User message: ${message}
 
-Provide a helpful response:`;
+Provide a helpful, well-structured response. If the response requires multiple points, organize them into clear paragraphs. Use natural language that flows well:`;
+    }
 
     try {
       return await this.generate(prompt, {
@@ -221,23 +239,41 @@ Provide a helpful response:`;
     context: string = '',
     referenceContext: string = ''
   ): Promise<void> {
+    const isKorean = this.containsKorean(message);
+    
     const fullContext = context && referenceContext 
-      ? `Document context: ${context}\n\nReference materials: ${referenceContext}`
+      ? isKorean 
+        ? `문서 맥락: ${context}\n\n참고 자료: ${referenceContext}`
+        : `Document context: ${context}\n\nReference materials: ${referenceContext}`
       : context
-      ? `Document context: ${context}`
+      ? isKorean ? `문서 맥락: ${context}` : `Document context: ${context}`
       : referenceContext
-      ? `Reference materials: ${referenceContext}`
+      ? isKorean ? `참고 자료: ${referenceContext}` : `Reference materials: ${referenceContext}`
       : '';
 
-    const prompt = fullContext
-      ? `${fullContext}
+    let prompt = '';
+    
+    if (isKorean) {
+      prompt = fullContext
+        ? `Reference materials: ${referenceContext}
+
+User question: ${message}
+
+Answer in Korean language using the reference materials provided above:`
+        : `User question: ${message}
+
+Answer in Korean language:`;
+    } else {
+      prompt = fullContext
+        ? `${fullContext}
 
 User message: ${message}
 
-Provide a helpful response using the available context and reference materials:`
-      : `User message: ${message}
+Provide a helpful, well-structured response. If the response requires multiple points, organize them into clear paragraphs. Use natural language that flows well and connects ideas smoothly. Reference the available context and materials when relevant:`
+        : `User message: ${message}
 
-Provide a helpful response:`;
+Provide a helpful, well-structured response. If the response requires multiple points, organize them into clear paragraphs. Use natural language that flows well:`;
+    }
 
     try {
       await this.streamGenerate(prompt, callback, {
@@ -251,23 +287,46 @@ Provide a helpful response:`;
   }
 
   async composeDocument(instruction: string, context: string = '', referenceContext: string = ''): Promise<string> {
+    // Detect if instruction is in Korean
+    const isKorean = this.containsKorean(instruction);
+    
     const fullContext = context && referenceContext 
-      ? `Document context: ${context}\n\nReference materials: ${referenceContext}`
+      ? `문서 맥락: ${context}\n\n참고 자료:\n${referenceContext}`
       : context
-      ? `Document context: ${context}`
+      ? `문서 맥락: ${context}`
       : referenceContext
-      ? `Reference materials: ${referenceContext}`
+      ? `참고 자료:\n${referenceContext}`
       : '';
 
-    const prompt = fullContext
-      ? `${fullContext}
+    let prompt = '';
+    
+    if (isKorean) {
+      prompt = fullContext
+        ? `Reference materials:
+${referenceContext}
+
+Document context:
+${context}
+
+Task: Write in Korean language - ${instruction}
+
+IMPORTANT: You MUST use the reference materials provided above. Do NOT say you need reference materials - they are provided above. Use the information from the reference materials to write your response.
+
+Write your response in Korean language. Separate paragraphs with double line breaks.`
+        : `Task: Write in Korean language - ${instruction}
+
+Write your response in Korean language. Separate paragraphs with double line breaks.`;
+    } else {
+      prompt = fullContext
+        ? `${fullContext}
 
 Instruction: ${instruction}
 
-Generate content based on the instruction, incorporating relevant information from the provided context and reference materials:`
-      : `Instruction: ${instruction}
+Generate well-structured content with clear paragraphs separated by double line breaks. Each paragraph should focus on a specific point or idea and contain 2-4 well-crafted sentences. Write in a natural, fluent style that flows smoothly from one idea to the next. Use transitional phrases to connect ideas between paragraphs. Incorporate relevant information from the provided context and reference materials:`
+        : `Instruction: ${instruction}
 
-Generate content based on the instruction:`;
+Generate well-structured content with clear paragraphs separated by double line breaks. Each paragraph should focus on a specific point or idea and contain 2-4 well-crafted sentences. Write in a natural, fluent style that flows smoothly from one idea to the next. Use transitional phrases to connect ideas between paragraphs:`;
+    }
 
     try {
       return await this.generate(prompt, {
@@ -286,25 +345,52 @@ Generate content based on the instruction:`;
     context: string = '',
     referenceContext: string = ''
   ): Promise<void> {
+    // Detect if instruction is in Korean
+    const isKorean = this.containsKorean(instruction);
+    
     const fullContext = context && referenceContext 
-      ? `Document context: ${context}\n\nReference materials: ${referenceContext}`
+      ? `문서 맥락: ${context}\n\n참고 자료:\n${referenceContext}`
       : context
-      ? `Document context: ${context}`
+      ? `문서 맥락: ${context}`
       : referenceContext
-      ? `Reference materials: ${referenceContext}`
+      ? `참고 자료:\n${referenceContext}`
       : '';
 
-    const prompt = fullContext
-      ? `${fullContext}
+    let prompt = '';
+    
+    if (isKorean) {
+      prompt = fullContext
+        ? `Reference materials:
+${referenceContext}
+
+Document context:
+${context}
+
+Task: Write in Korean language - ${instruction}
+
+IMPORTANT: You MUST use the reference materials provided above. Do NOT say you need reference materials - they are provided above. Use the information from the reference materials to write your response.
+
+Write your response in Korean language. Separate paragraphs with double line breaks.`
+        : `Task: Write in Korean language - ${instruction}
+
+Write your response in Korean language. Separate paragraphs with double line breaks.`;
+    } else {
+      prompt = fullContext
+        ? `${fullContext}
 
 Instruction: ${instruction}
 
-Generate content based on the instruction, incorporating relevant information from the provided context and reference materials:`
-      : `Instruction: ${instruction}
+Generate well-structured content with clear paragraphs separated by double line breaks. Each paragraph should focus on a specific point or idea. Write in a natural, fluent style that flows well from one idea to the next. Incorporate relevant information from the provided context and reference materials:`
+        : `Instruction: ${instruction}
 
-Generate content based on the instruction:`;
+Generate well-structured content with clear paragraphs separated by double line breaks. Each paragraph should focus on a specific point or idea. Write in a natural, fluent style that flows well from one idea to the next:`;
+    }
 
     try {
+      // Debug logging - remove after testing
+      console.log('Debug - AI Prompt (first 300 chars):', prompt.substring(0, 300));
+      console.log('Debug - Full context length:', fullContext.length);
+      
       await this.streamGenerate(prompt, callback, {
         maxTokens: 1024,
         temperature: 0.6
@@ -325,5 +411,11 @@ Generate content based on the instruction:`;
       baseUrl: this.baseUrl,
       connected: this.isConnected
     };
+  }
+
+  private containsKorean(text: string): boolean {
+    // Korean character ranges: Hangul syllables, Jamo, and other Korean characters
+    const koreanRegex = /[\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uAC00-\uD7AF\uD7B0-\uD7FF]/;
+    return koreanRegex.test(text);
   }
 }

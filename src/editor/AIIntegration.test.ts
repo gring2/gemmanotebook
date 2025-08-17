@@ -22,12 +22,13 @@ class MockGemmaService extends GemmaService {
     context: string = '',
     referenceContext?: string
   ): Promise<void> {
-    const content = `# Generated Content\n\nThis is streamed content based on: ${instruction}\n\n- Point 1\n- Point 2`;
+    // Simulate semantic paragraph content
+    const content = `This is the first paragraph with meaningful content. It contains several sentences that explain the topic. This completes the first semantic block.\n\nThis is the second paragraph that continues the discussion. It provides additional details and context. The flow between paragraphs is natural and coherent.\n\nThis final paragraph wraps up the`;
     const chunks = content.split(' ');
     
     for (const chunk of chunks) {
       callback(chunk + ' ');
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 5));
     }
   }
 }
@@ -111,6 +112,37 @@ describe('AI Integration in Editor', () => {
     
     // Should contain the streamed content
     const contentText = blocks.map(b => b.content).join(' ');
-    expect(contentText).toContain('streamed content');
+    expect(contentText).toContain('meaningful content');
+  });
+
+  test('should create semantic paragraph blocks from streamed content', async () => {
+    const initialBlockCount = editor.getBlocks().length;
+    
+    await editor.streamAIContentIntoEditor('Generate semantic content');
+    
+    const blocks = editor.getBlocks();
+    const newBlocks = blocks.slice(initialBlockCount);
+    
+    // Should create multiple blocks for different paragraphs
+    expect(newBlocks.length).toBeGreaterThan(1);
+    
+    // Check that paragraphs contain complete sentences  
+    const firstParagraph = newBlocks[0]?.content || '';
+    const secondParagraph = newBlocks[1]?.content || '';
+    
+    // Verify basic paragraph structure
+    expect(firstParagraph).toContain('This is the first paragraph');
+    expect(firstParagraph).toContain('meaningful content');
+    
+    if (newBlocks.length > 1) {
+      expect(secondParagraph).toContain('This is the second paragraph');
+      expect(secondParagraph).toContain('discussion');
+    }
+    
+    // Each paragraph should contain complete thoughts
+    expect(firstParagraph.length).toBeGreaterThan(20);
+    if (secondParagraph) {
+      expect(secondParagraph.length).toBeGreaterThan(20);
+    }
   });
 });
