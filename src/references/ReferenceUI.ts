@@ -40,6 +40,8 @@ export class ReferenceUI {
         max-height: 0;
         overflow: hidden;
         transition: max-height 0.3s ease;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       ">
         <div class="upload-area" style="
           border: 2px dashed #ddd;
@@ -101,6 +103,8 @@ export class ReferenceUI {
         <div class="references-list" style="
           max-height: 200px;
           overflow-y: auto;
+          overflow-x: hidden;
+          word-wrap: break-word;
         "></div>
         
         <div class="undo-section" style="
@@ -388,19 +392,22 @@ export class ReferenceUI {
         position: relative;
         transition: all 0.2s;
         border: 2px solid transparent;
+        overflow: hidden;
+        word-wrap: break-word;
+        box-sizing: border-box;
       " onmouseover="this.style.backgroundColor='#f0f0f0'" 
          onmouseout="this.classList.contains('focused') ? this.style.backgroundColor='#e3f2fd' : this.style.backgroundColor='#f8f9fa'"
          onfocus="this.style.borderColor='#2196f3'; this.style.backgroundColor='#e3f2fd';"
          onblur="this.style.borderColor='transparent'; this.classList.contains('focused') ? this.style.backgroundColor='#e3f2fd' : this.style.backgroundColor='#f8f9fa';">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden;">
             <input type="checkbox" class="ref-checkbox" data-doc-id="${doc.id}" style="
               cursor: pointer;
               margin: 0;
               width: 14px;
               height: 14px;
             ">
-            <div style="flex: 1; min-width: 0;">
+            <div style="flex: 1; min-width: 0; overflow: hidden;">
               <div style="
                 font-size: 13px;
                 font-weight: 500;
@@ -421,6 +428,8 @@ export class ReferenceUI {
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                max-width: 100%;
+                word-break: break-word;
               ">
                 ${truncatedContent}
               </div>
