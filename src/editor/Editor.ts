@@ -263,6 +263,12 @@ export class Editor {
     // Only handle keys when a block is selected
     if (!this.selectedBlockId) return;
     
+    // Don't interfere with reference UI functionality
+    const referencesSection = document.querySelector('.references-section');
+    if (referencesSection && referencesSection.contains(event.target as Node)) {
+      return; // Let reference UI handle its own events
+    }
+    
     // Prevent text input when block is selected - this maintains selection state
     if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
       // User is typing - clear selection and let them start editing
